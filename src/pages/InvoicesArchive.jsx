@@ -13,7 +13,7 @@ const InvoicesArchive = () => {
   const [filteredData, setFilteredData] = useState([]);
   const [rawData, setRawData] = useState({ invoices: [], vendors: [] });
   const [selectedPdf, setSelectedPdf] = useState(null);
-  
+
   // Authentication states
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
@@ -33,7 +33,7 @@ const InvoicesArchive = () => {
     e.preventDefault();
     setIsLoading(true);
     setPasswordError("");
-    
+
     // Simulate server verification with a slight delay
     setTimeout(() => {
       if (password === CORRECT_PASSWORD) {
@@ -45,70 +45,72 @@ const InvoicesArchive = () => {
     }, 800);
   };
 
-  // ✅ Fetch raw data (Invoices + Vendors)
+  //   Fetch raw data (Invoices + Vendors)
   const fetchDetails = async () => {
-  if (!isAuthenticated) return;
+    if (!isAuthenticated) return;
 
-  try {
-    // ✅ Fetch invoices, including urgency column
-    const { data: invoices, error: invoicesError } = await supabase
-      .from("invoices")
-      .select(
-        "order_id, invoice_no, order_date, total_amount, cgst_amount, sgst_amount, igst_amount, vendor_id, pdf_url, urgency, payment_status"
-      );
+    try {
+      //   Fetch invoices, including urgency column
+      const { data: invoices, error: invoicesError } = await supabase
+        .from("invoices")
+        .select(
+          "order_id, invoice_no, order_date, total_amount, cgst_amount, sgst_amount, igst_amount, vendor_id, pdf_url, urgency, payment_status",
+        );
 
-    // ✅ Fetch vendors for vendor_name & gstin
-    const { data: vendors, error: vendorsError } = await supabase
-      .from("vendors_db")
-      .select("vendor_id, vendor_name, gstin");
+      //   Fetch vendors for vendor_name & gstin
+      const { data: vendors, error: vendorsError } = await supabase
+        .from("vendors_db")
+        .select("vendor_id, vendor_name, gstin");
 
-    if (invoicesError) console.error("Error fetching invoices:", invoicesError);
-    if (vendorsError) console.error("Error fetching vendors:", vendorsError);
+      if (invoicesError)
+        console.error("Error fetching invoices:", invoicesError);
+      if (vendorsError) console.error("Error fetching vendors:", vendorsError);
 
-    setRawData({ invoices: invoices || [], vendors: vendors || [] });
-  } catch (err) {
-    console.error("Unexpected error while fetching data:", err);
-  }
-};
+      setRawData({ invoices: invoices || [], vendors: vendors || [] });
+    } catch (err) {
+      console.error("Unexpected error while fetching data:", err);
+    }
+  };
 
-  // ✅ Process and merge data
-  // ✅ Process and merge data
-const generateTableData = () => {
-  const { invoices, vendors } = rawData;
-  // ✅ Create a lookup for vendor_name and gstin
-  const vendorMap = {};
-  vendors.forEach((vendor) => {
-    vendorMap[vendor.vendor_id] = {
-      vendor_name: vendor.vendor_name,
-      gstin: vendor.gstin,
-    };
-  });
+  //   Process and merge data
+  //   Process and merge data
+  const generateTableData = () => {
+    const { invoices, vendors } = rawData;
+    //   Create a lookup for vendor_name and gstin
+    const vendorMap = {};
+    vendors.forEach((vendor) => {
+      vendorMap[vendor.vendor_id] = {
+        vendor_name: vendor.vendor_name,
+        gstin: vendor.gstin,
+      };
+    });
 
-  const processedData = invoices.map((invoice) => ({
-    order_id: invoice.order_id,
-    invoice_no: invoice.invoice_no,
-    order_date: invoice.order_date,
-    total_amount: invoice.total_amount ? `₹${invoice.total_amount}` : "N/A",
-    cgst_amount: invoice.cgst_amount ? `₹${invoice.cgst_amount}` : "N/A",
-    sgst_amount: invoice.sgst_amount ? `₹${invoice.sgst_amount}` : "N/A",
-    igst_amount: invoice.igst_amount ? `₹${invoice.igst_amount}` : "N/A",
-    vendor_name: vendorMap[invoice.vendor_id]?.vendor_name || "Unknown Vendor",
-    gstin: vendorMap[invoice.vendor_id]?.gstin || "N/A",
-    pdf_url: invoice.pdf_url || null, // Keep the original pdf_url field
-    urgency: invoice.urgency, // ✅ Include urgency from database
-    payment_status:invoice.payment_status,
-  }));
-  
-  // Sort processedData by order_date (newest to oldest)
-  return processedData.sort((a, b) => {
-    const dateA = new Date(a.order_date);
-    const dateB = new Date(b.order_date);
-    return dateB - dateA; // For descending order (newest first)
-    // Use return dateA - dateB; for ascending order (oldest first)
-  });
-};
+    const processedData = invoices.map((invoice) => ({
+      order_id: invoice.order_id,
+      invoice_no: invoice.invoice_no,
+      order_date: invoice.order_date,
+      total_amount: invoice.total_amount ? `₹${invoice.total_amount}` : "N/A",
+      cgst_amount: invoice.cgst_amount ? `₹${invoice.cgst_amount}` : "N/A",
+      sgst_amount: invoice.sgst_amount ? `₹${invoice.sgst_amount}` : "N/A",
+      igst_amount: invoice.igst_amount ? `₹${invoice.igst_amount}` : "N/A",
+      vendor_name:
+        vendorMap[invoice.vendor_id]?.vendor_name || "Unknown Vendor",
+      gstin: vendorMap[invoice.vendor_id]?.gstin || "N/A",
+      pdf_url: invoice.pdf_url || null, // Keep the original pdf_url field
+      urgency: invoice.urgency, //   Include urgency from database
+      payment_status: invoice.payment_status,
+    }));
 
-  // ✅ Fetch data when authenticated
+    // Sort processedData by order_date (newest to oldest)
+    return processedData.sort((a, b) => {
+      const dateA = new Date(a.order_date);
+      const dateB = new Date(b.order_date);
+      return dateB - dateA; // For descending order (newest first)
+      // Use return dateA - dateB; for ascending order (oldest first)
+    });
+  };
+
+  //   Fetch data when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       console.log("Fetching invoice details...");
@@ -116,7 +118,7 @@ const generateTableData = () => {
     }
   }, [isAuthenticated]);
 
-  // ✅ Process data when rawData updates
+  //   Process data when rawData updates
   useEffect(() => {
     if (rawData.invoices.length) {
       const processedData = generateTableData();
@@ -126,7 +128,7 @@ const generateTableData = () => {
     }
   }, [rawData]);
 
-  // ✅ Apply Filters
+  //   Apply Filters
   const handleApplyFilters = ({
     minBalance,
     maxBalance,
@@ -137,12 +139,12 @@ const generateTableData = () => {
 
     if (minBalance) {
       filtered = filtered.filter(
-        (item) => parseFloat(item.total_amount.replace("₹", "")) >= minBalance
+        (item) => parseFloat(item.total_amount.replace("₹", "")) >= minBalance,
       );
     }
     if (maxBalance) {
       filtered = filtered.filter(
-        (item) => parseFloat(item.total_amount.replace("₹", "")) <= maxBalance
+        (item) => parseFloat(item.total_amount.replace("₹", "")) <= maxBalance,
       );
     }
     if (startDate && endDate) {
@@ -155,12 +157,12 @@ const generateTableData = () => {
     setFilteredData(filtered);
   };
 
-  // ✅ Reset Filters
+  //   Reset Filters
   const handleResetFilters = () => {
     setFilteredData(tableData);
   };
 
-  // ✅ Apply Search
+  //   Apply Search
   const searchFilteredData = filteredData.filter((invoice) => {
     if (!searchQuery) return true;
     const lowerSearch = searchQuery.toLowerCase();
@@ -172,7 +174,7 @@ const generateTableData = () => {
     );
   });
 
-  // ✅ Handler for PDF button click
+  //   Handler for PDF button click
   const handlePdfClick = (pdfUrl) => {
     setSelectedPdf(pdfUrl);
   };
@@ -186,14 +188,14 @@ const generateTableData = () => {
   const LoginForm = () => {
     // Use useRef to maintain reference to the input element
     const passwordInputRef = React.useRef(null);
-    
+
     // Focus the input field when component mounts
     React.useEffect(() => {
       if (passwordInputRef.current) {
         passwordInputRef.current.focus();
       }
     }, []);
-    
+
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#F2F2F2] px-4">
         <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
@@ -207,7 +209,10 @@ const generateTableData = () => {
           </h2>
           <form onSubmit={handlePasswordSubmit} autoComplete="off">
             <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+              <label
+                className="block text-gray-700 text-sm font-bold mb-2"
+                htmlFor="password"
+              >
                 Enter Password
               </label>
               <input
@@ -268,10 +273,10 @@ const generateTableData = () => {
           tableData={searchFilteredData}
         />
 
-        {/* ✅ SearchBar now updates `searchQuery` */}
+        {/*   SearchBar now updates `searchQuery` */}
         <SearchBar onSearch={setSearchQuery} />
 
-        {/* ✅ Pass the filtered & searched data to TableComponent */}
+        {/*   Pass the filtered & searched data to TableComponent */}
         <TableComponent
           title="Invoices Archive"
           columns={[
@@ -284,26 +289,31 @@ const generateTableData = () => {
               key: "urgency",
               label: "Urgency",
               render: (row) => {
-                let urgencyColor = "bg-green-100 text-green-700 border border-green-400"; // Default: No Urgency (Green)
+                let urgencyColor =
+                  "bg-green-100 text-green-700 border border-green-400"; // Default: No Urgency (Green)
                 let urgencyText = "No Urgency"; // Default text
-            
+
                 if (row.urgency !== null) {
                   const urgencyValue = parseInt(row.urgency, 10);
-            
+
                   if (urgencyValue === 0) {
                     urgencyText = "No Urgency";
                   } else {
                     urgencyText = `${urgencyValue} days`;
                     if (urgencyValue < 10) {
-                      urgencyColor = "bg-red-100 text-red-700 border border-red-400"; // High urgency (Red)
+                      urgencyColor =
+                        "bg-red-100 text-red-700 border border-red-400"; // High urgency (Red)
                     } else {
-                      urgencyColor = "bg-yellow-100 text-yellow-700 border border-yellow-400"; // Medium urgency (Yellow)
+                      urgencyColor =
+                        "bg-yellow-100 text-yellow-700 border border-yellow-400"; // Medium urgency (Yellow)
                     }
                   }
                 }
-            
+
                 return (
-                  <span className={`px-3 py-1 rounded-lg text-sm font-medium ${urgencyColor} shadow-sm`}>
+                  <span
+                    className={`px-3 py-1 rounded-lg text-sm font-medium ${urgencyColor} shadow-sm`}
+                  >
                     {urgencyText}
                   </span>
                 );
@@ -318,22 +328,28 @@ const generateTableData = () => {
             {
               key: "payment_status",
               label: "Payment Status",
-              render: (row) => {  // Accept the entire row object
+              render: (row) => {
+                // Accept the entire row object
                 const status = row.payment_status; // Extract the payment_status field
-            
-                let statusColor = "bg-gray-100 text-gray-800 border border-gray-300"; 
-                let statusText = status || "Unknown"; 
-            
+
+                let statusColor =
+                  "bg-gray-100 text-gray-800 border border-gray-300";
+                let statusText = status || "Unknown";
+
                 if (status === "Paid") {
-                  statusColor = "bg-green-100 text-green-700 border border-green-400";
+                  statusColor =
+                    "bg-green-100 text-green-700 border border-green-400";
                 } else if (status === "Pending") {
-                  statusColor = "bg-yellow-100 text-red-700 border border-yellow-400";
+                  statusColor =
+                    "bg-yellow-100 text-red-700 border border-yellow-400";
                 } else if (status === "Overdue") {
                   statusColor = "bg-red-100 text-red-700 border border-red-400";
                 }
-            
+
                 return (
-                  <span className={`px-3 py-1 rounded-lg text-sm font-medium ${statusColor} shadow-sm`}>
+                  <span
+                    className={`px-3 py-1 rounded-lg text-sm font-medium ${statusColor} shadow-sm`}
+                  >
                     {statusText}
                   </span>
                 );
@@ -360,7 +376,7 @@ const generateTableData = () => {
             </div>
             <div className="flex-grow p-2">
               <iframe
-                src={selectedPdf} // ✅ Use direct preview link
+                src={selectedPdf} //   Use direct preview link
                 className="w-full h-full border-0"
                 title="PDF Viewer"
               ></iframe>

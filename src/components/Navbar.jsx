@@ -10,7 +10,7 @@ const Navbar = () => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   
-  // Fetch user data from localStorage
+ 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {

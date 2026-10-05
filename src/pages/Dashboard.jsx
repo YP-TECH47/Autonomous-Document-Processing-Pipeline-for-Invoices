@@ -17,20 +17,18 @@ const Dashboard = () => {
     vendors: [],
   });
 
-  // ✅ Fetch raw data
   const fetchDetails = async () => {
     try {
-      // ✅ Fetch invoices (set status as "Approved")
       const { data: invoices, error: invoicesError } = await supabase
         .from("invoices")
         .select("order_id, invoice_no, order_date, vendor_id, total_amount");
 
-      // ✅ Fetch flagged invoices (with status handling)
       const { data: flagged, error: flaggedError } = await supabase
         .from("flagged")
-        .select("order_id, invoice_id, invoice_date, vendor_id, status, total_amount");
+        .select(
+          "order_id, invoice_id, invoice_date, vendor_id, status, total_amount",
+        );
 
-      // ✅ Fetch vendors (get vendor_name & gstin)
       const { data: vendors, error: vendorsError } = await supabase
         .from("vendors_db")
         .select("vendor_id, vendor_name, gstin");
@@ -51,11 +49,9 @@ const Dashboard = () => {
     }
   };
 
-  // ✅ Process and merge data
   const generateTableData = () => {
     const { invoices, flagged, vendors } = rawData;
 
-    // ✅ Create a lookup for vendor_name and gstin
     const vendorMap = {};
     vendors.forEach((vendor) => {
       vendorMap[vendor.vendor_id] = {
@@ -66,7 +62,6 @@ const Dashboard = () => {
 
     const finalData = [];
 
-    // ✅ Process invoices (set as "Approved")
     if (invoices.length) {
       invoices.forEach((invoice) => {
         finalData.push({
@@ -77,18 +72,17 @@ const Dashboard = () => {
           vendor_name:
             vendorMap[invoice.vendor_id]?.vendor_name || "Unknown Vendor",
           gstin: vendorMap[invoice.vendor_id]?.gstin || "N/A",
-          total: invoice.total_amount ? `₹${invoice.total_amount}` : "N/A", // ✅ Adds ₹ symbol
+          total: invoice.total_amount ? `₹${invoice.total_amount}` : "N/A",
           status: "Approved",
         });
       });
     }
 
-    // ✅ Process flagged invoices (handle status conditions)
     if (flagged.length) {
       flagged.forEach((flaggedEntry) => {
         // Skip flagged entries with "Approved" status
         if (flaggedEntry.status === "Approved") return;
-        
+
         finalData.push({
           order_id: flaggedEntry.order_id,
           invoice_id: flaggedEntry.invoice_id,
@@ -97,7 +91,9 @@ const Dashboard = () => {
           vendor_name:
             vendorMap[flaggedEntry.vendor_id]?.vendor_name || "Unknown Vendor",
           gstin: vendorMap[flaggedEntry.vendor_id]?.gstin || "N/A",
-          total: flaggedEntry.total_amount ? `₹${flaggedEntry.total_amount}` : "N/A",
+          total: flaggedEntry.total_amount
+            ? `₹${flaggedEntry.total_amount}`
+            : "N/A",
           status:
             flaggedEntry.status === "Rejected"
               ? "Rejected"
@@ -106,7 +102,6 @@ const Dashboard = () => {
       });
     }
 
-    // ✅ Sort by invoice_date (newest to oldest)
     finalData.sort((a, b) => {
       const dateA = new Date(a.invoice_date);
       const dateB = new Date(b.invoice_date);
@@ -117,11 +112,10 @@ const Dashboard = () => {
     return finalData;
   };
 
-  // ✅ Function to sync data with dashboard_activity table
   const syncWithDashboardActivity = async (processedData) => {
     try {
       console.log("Starting sync with dashboard_activity...");
-      
+
       // First, fetch existing records from dashboard_activity
       const { data: existingActivities, error: fetchError } = await supabase
         .from("dashboard_activity")
@@ -132,12 +126,15 @@ const Dashboard = () => {
         return;
       }
 
-      console.log("Existing dashboard_activity entries:", existingActivities ? existingActivities.length : 0);
+      console.log(
+        "Existing dashboard_activity entries:",
+        existingActivities ? existingActivities.length : 0,
+      );
 
       // Create a lookup map for existing activities by order_id and invoice_id
       const existingMap = {};
       if (existingActivities && existingActivities.length) {
-        existingActivities.forEach(activity => {
+        existingActivities.forEach((activity) => {
           // Create a unique key for each entry
           const key = `${activity.order_id}-${activity.invoice_id}`;
           existingMap[key] = activity;
@@ -152,8 +149,8 @@ const Dashboard = () => {
       // Process each item in the processed data
       for (const item of processedData) {
         // Make sure we extract the numeric amount from the total string
-        const totalAmount = item.total.replace('₹', '').trim();
-        
+        const totalAmount = item.total.replace("₹", "").trim();
+
         // Create a unique key matching the format used for the lookup map
         const key = `${item.order_id}-${item.invoice_id}`;
         const existingItem = existingMap[key];
@@ -166,7 +163,7 @@ const Dashboard = () => {
           vendor_id: item.vendor_id, // Store vendor_id instead of vendor details directly
           total_amount: totalAmount,
           status: item.status,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         };
 
         console.log(`Processing item: ${key}`, recordData);
@@ -175,7 +172,7 @@ const Dashboard = () => {
         if (!existingItem) {
           // If record doesn't exist, insert it
           console.log(`Inserting new record for ${key}`);
-          
+
           const { data, error: insertError } = await supabase
             .from("dashboard_activity")
             .insert([recordData])
@@ -189,23 +186,39 @@ const Dashboard = () => {
           }
         } else {
           // Check if any field has changed
-          const hasChanged = 
+          const hasChanged =
             existingItem.invoice_date !== item.invoice_date ||
             existingItem.vendor_id !== item.vendor_id || // Compare vendor_id instead
             existingItem.total_amount !== totalAmount ||
             existingItem.status !== item.status;
 
           console.log(`Changes detected for ${key}: ${hasChanged}`);
-          
+
           if (hasChanged) {
             // Log what changed
             console.log("Changes:", {
-              invoice_date: { old: existingItem.invoice_date, new: item.invoice_date, changed: existingItem.invoice_date !== item.invoice_date },
-              vendor_id: { old: existingItem.vendor_id, new: item.vendor_id, changed: existingItem.vendor_id !== item.vendor_id },
-              total_amount: { old: existingItem.total_amount, new: totalAmount, changed: existingItem.total_amount !== totalAmount },
-              status: { old: existingItem.status, new: item.status, changed: existingItem.status !== item.status }
+              invoice_date: {
+                old: existingItem.invoice_date,
+                new: item.invoice_date,
+                changed: existingItem.invoice_date !== item.invoice_date,
+              },
+              vendor_id: {
+                old: existingItem.vendor_id,
+                new: item.vendor_id,
+                changed: existingItem.vendor_id !== item.vendor_id,
+              },
+              total_amount: {
+                old: existingItem.total_amount,
+                new: totalAmount,
+                changed: existingItem.total_amount !== totalAmount,
+              },
+              status: {
+                old: existingItem.status,
+                new: item.status,
+                changed: existingItem.status !== item.status,
+              },
             });
-            
+
             // Update the existing record with new values
             const { data, error: updateError } = await supabase
               .from("dashboard_activity")
@@ -227,13 +240,14 @@ const Dashboard = () => {
         }
       }
 
-      console.log(`Dashboard activity sync complete: ${insertCount} inserts, ${updateCount} updates, ${noChangeCount} unchanged`);
+      console.log(
+        `Dashboard activity sync complete: ${insertCount} inserts, ${updateCount} updates, ${noChangeCount} unchanged`,
+      );
     } catch (err) {
       console.error("Error syncing with dashboard_activity:", err);
     }
   };
 
-  // ✅ Fetch data on component mount
   useEffect(() => {
     const fetchData = async () => {
       console.log("Fetching dashboard details...");
@@ -243,7 +257,6 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  // ✅ Process data when rawData updates
   useEffect(() => {
     const processAndSyncData = async () => {
       if (rawData.invoices.length > 0 || rawData.flagged.length > 0) {
@@ -251,46 +264,51 @@ const Dashboard = () => {
         console.log("Processed Data:", processedData);
         setTableData(processedData);
         setFilteredData(processedData);
-        
+
         // Sync the processed data with dashboard_activity table
         await syncWithDashboardActivity(processedData);
       }
     };
-    
+
     processAndSyncData();
   }, [rawData]);
 
-  // ✅ Apply Filters
-  const handleApplyFilters = ({ minBalance, maxBalance, startDate, endDate }) => {
+  const handleApplyFilters = ({
+    minBalance,
+    maxBalance,
+    startDate,
+    endDate,
+  }) => {
     let filtered = [...tableData];
-  
-    // ✅ Filter by total (min balance & max balance)
+
     if (minBalance) {
       filtered = filtered.filter((item) => {
-        const totalValue = parseFloat(item.total.replace("₹", "").replace(",", ""));
+        const totalValue = parseFloat(
+          item.total.replace("₹", "").replace(",", ""),
+        );
         return totalValue >= parseFloat(minBalance);
       });
     }
-  
+
     if (maxBalance) {
       filtered = filtered.filter((item) => {
-        const totalValue = parseFloat(item.total.replace("₹", "").replace(",", ""));
+        const totalValue = parseFloat(
+          item.total.replace("₹", "").replace(",", ""),
+        );
         return totalValue <= parseFloat(maxBalance);
       });
     }
-  
-    // ✅ Filter by date range
+
     if (startDate && endDate) {
       filtered = filtered.filter((item) => {
         const itemDate = new Date(item.invoice_date);
         return itemDate >= new Date(startDate) && itemDate <= new Date(endDate);
       });
     }
-  
+
     setFilteredData(filtered);
   };
 
-  // ✅ Reset Filters
   const handleResetFilters = () => {
     setFilteredData(tableData);
   };
@@ -298,17 +316,17 @@ const Dashboard = () => {
   const getStatusStyle = (status) => {
     switch (status) {
       case "Approved":
-        return "text-green-600 font-semibold"; // ✅ Green for Approved
+        return "text-green-600 font-semibold"; //  Green for Approved
       case "Rejected":
-        return "text-red-600 font-semibold"; // 🔴 Red for Rejected
+        return "text-red-600 font-semibold"; //  Red for Rejected
       case "Flagged for review":
-        return "text-yellow-600 font-semibold"; // 🟡 Yellow for Flagged
+        return "text-yellow-600 font-semibold"; //  Yellow for Flagged
       default:
         return "text-gray-600"; // Default styling
     }
   };
 
-  // ✅ Apply Search
+  //  Apply Search
   const searchFilteredData = filteredData.filter((entry) => {
     if (!searchQuery) return true;
 
@@ -327,26 +345,26 @@ const Dashboard = () => {
     <div className="min-h-screen bg-[#F2F2F2]">
       <Navbar />
       <Sidebar />
-  
+
       <main className="ml-[280px] pt-24 px-6">
         <h1 className="text-4xl font-serif font-bold text-gray-800 mb-8">
           Dashboard
         </h1>
-  
-        {/* ✅ Filter Card */}
+
+        {/*   Filter Card */}
         <FilterCard
           onApplyFilters={handleApplyFilters}
           onResetFilters={handleResetFilters}
           tableData={searchFilteredData}
         />
-  
+
         {/* Status Bar Graph */}
         <StatusBarGraph data={searchFilteredData} />
-  
-        {/* ✅ SearchBar */}
+
+        {/*   SearchBar */}
         <SearchBar onSearch={setSearchQuery} />
-  
-        {/* ✅ TableComponent for Dashboard */}
+
+        {/*   TableComponent for Dashboard */}
         <TableComponent
           title="Dashboard Activity"
           columns={[

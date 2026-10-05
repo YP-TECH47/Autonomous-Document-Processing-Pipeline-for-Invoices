@@ -11,13 +11,13 @@ const TableComponent = ({
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "approved":
-        return "bg-green-100 text-green-800"; // ✅ Green for Approved
+        return "bg-green-100 text-green-800"; //   Green for Approved
       case "rejected":
         return "bg-red-100 text-red-800"; // 🔴 Red for Rejected
       case "flagged for review":
         return "bg-yellow-100 text-yellow-800";
-      case "settled": // Corrected typo here
-        return "bg-green-100 text-green-800";  // ✅ Green for Settled
+      case "settled":
+        return "bg-green-100 text-green-800"; //   Green for Settled
       default:
         return "bg-gray-100 text-gray-800"; // ⚪ Default for unknown statuses
     }
@@ -55,7 +55,7 @@ const TableComponent = ({
                     {column.key === "status" ? (
                       <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                          row[column.key]
+                          row[column.key],
                         )}`}
                       >
                         {row[column.key]}

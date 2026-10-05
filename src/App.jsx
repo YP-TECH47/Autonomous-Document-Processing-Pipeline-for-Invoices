@@ -8,14 +8,13 @@ import PurchaseOrders from "./pages/PurchaseOrders";
 import Login from "./pages/Login";
 import AccountsPayable from "./pages/AccountsPayable";
 
-// Loading Spinner Component
+ 
 const LoadingSpinner = () => (
   <div className="fixed inset-0 flex items-center justify-center z-50">
     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
   </div>
 );
-
-// Higher-order component for pages with loading
+ 
 const withLoading = (Component) => () => {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -34,7 +33,7 @@ const PurchaseOrdersWithLoading = withLoading(PurchaseOrders);
 const AccountsPayableWithLoading = withLoading(AccountsPayable);
 const LoginWithLoading = withLoading(Login);
 
-// Protected route component
+ 
 const ProtectedRoute = ({ children }) => {
   let user = null;
   try {

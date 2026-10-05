@@ -7,7 +7,7 @@ const FilterCard = ({ onApplyFilters, onResetFilters, tableData }) => {
   const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
-    // Set only the end date to today by default
+   
     const today = new Date();
     setEndDate(today.toISOString().split('T')[0]);
   }, []);
@@ -39,7 +39,7 @@ const FilterCard = ({ onApplyFilters, onResetFilters, tableData }) => {
   };
 
   const handleResetFilters = () => {
-    // Only reset to today's date for end date
+  
     const today = new Date();
     
     setMinBalance('');
@@ -55,7 +55,7 @@ const FilterCard = ({ onApplyFilters, onResetFilters, tableData }) => {
       return;
     }
 
-    // Convert data to CSV format
+   
     const headers = Object.keys(tableData[0]).join(',');
     const csvRows = tableData.map(row => 
       Object.values(row).map(value => 
@@ -64,7 +64,7 @@ const FilterCard = ({ onApplyFilters, onResetFilters, tableData }) => {
     );
     const csvContent = [headers, ...csvRows].join('\n');
 
-    // Create a Blob and download
+  
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
