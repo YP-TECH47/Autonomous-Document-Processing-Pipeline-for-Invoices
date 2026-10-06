@@ -77,7 +77,7 @@ const StatusBarGraph = ({ data }) => {
     { id: 'Flagged for review', label: 'Flagged for Review' }
   ];
   
-   information on hover
+  // Custom tooltip for more detailed information on hover
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
