@@ -1,4 +1,3 @@
-
 import time
 import io
 from google.oauth2 import service_account
@@ -686,11 +685,11 @@ def extract_text_from_pdf_stream(file_id):
     done = False
     while not done:
         status, done = downloader.next_chunk()
-        print(f"🔽 Downloading PDF - {int(status.progress() * 100)}% complete")
+        print(f" Downloading PDF - {int(status.progress() * 100)}% complete")
 
     pdf_stream.seek(0)  
 
-    print("🔍 Extracting text from PDF...")
+    print(" Extracting text from PDF...")
     doc = DocumentFile.from_pdf(pdf_stream)
     print(f"Number of pages: {len(doc)}")
     result = predictor(doc)
@@ -725,7 +724,7 @@ def process_pdf(file_id, file_name):
 
     images = []
     for page_idx, (img, result_page) in enumerate(zip(img_pages, result.pages)):
-        print(f"\n📝 Processing Page {page_idx + 1}...\n")
+        print(f"\n Processing Page {page_idx + 1}...\n")
         words_data = extract_words_with_positions(result_page, img)
 
         # Process each mismatch entry for the current page
@@ -764,7 +763,7 @@ try:
 
             # Skip processing if the file is the highlighted report
             if file_name == "highlighted_invoice_report.pdf":
-                print(f"⏭️ Skipping processing for {file_name} (ID: {file_id}) as it is the highlighted report.")
+                print(f" Skipping processing for {file_name} (ID: {file_id}) as it is the highlighted report.")
                 continue
 
             if file_id not in processed_files:
