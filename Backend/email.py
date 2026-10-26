@@ -3,16 +3,19 @@ import smtplib
 import time
 import logging
 from email.mime.text import MIMEText
+import os
+from dotenv import load_dotenv
 
+#Load the enviorment variables 
+load_dotenv()
 # Supabase Credentials (For Dev purpose)
-SUPABASE_URL = "https://jkbeqyjthkgjgdgivrzu.supabase.co"
-SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImprYmVxeWp0aGtnamdkZ2l2cnp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE4NjI4ODEsImV4cCI6MjA1NzQzODg4MX0.1GVcC8ByoN5z8SDLSAfZweR5ML8RCRfSI8Vvi2STaAo"
-
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+SUPABASE_API_KEY = os.environ["SUPABASE_KEY"]
 # Email Credentials (For Dev purpose)
-EMAIL_SENDER = "invoice.sender123@gmail.com"
-EMAIL_PASSWORD = "sample_invoice"
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
+EMAIL_SENDER = os.environ["EMAIL_SENDER"]
+EMAIL_PASSWORD = os.environ["EMAIL_PASSWORD"]
+SMTP_SERVER = os.environ["SMTP_SERVER"]
+SMTP_PORT = os.environ["SMTP_PORT"]
 
 # Store processed invoices to avoid duplicate emails
 processed_invoices = set()

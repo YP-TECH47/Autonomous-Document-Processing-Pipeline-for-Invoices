@@ -1,5 +1,7 @@
 import time
 import io
+import os
+from dotenv import load_dotenv
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
@@ -28,25 +30,26 @@ import re
 from fuzzywuzzy import fuzz  
 from fuzzywuzzy import process
 
-
+#Load all the enviorment Variables
+load_dotenv()
 # Supabase connection settings
-SUPABASE_URL = "https://jkbeqyjthkgjgdgivrzu.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImprYmVxeWp0aGtnamdkZ2l2cnp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE4NjI4ODEsImV4cCI6MjA1NzQzODg4MX0.1GVcC8ByoN5z8SDLSAfZweR5ML8RCRfSI8Vvi2STaAo"
+SUPABASE_URL = os.environ["SUPABASE_URL"]
+SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 
 supabase_client = supabase.create_client(SUPABASE_URL, SUPABASE_KEY)
 #  Load Google Drive API Credentials
-SERVICE_ACCOUNT_FILE = "/Users/jatinaggarwal/Desktop/New/doctr_env/wide-retina-451409-a8-0e8089c04dc3.json"
-SCOPES = ["https://www.googleapis.com/auth/drive"]
+SERVICE_ACCOUNT_FILE = os.environ["SERVICE_ACCOUNT_FILE"]
+SCOPES = os.environ["SCOPES"]
 creds = service_account.Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 drive_service = build("drive", "v3", credentials=creds)
 
 
-genai.configure(api_key="AIzaSyBT-X0MdhHOo-snj26x3_6CDk1J4t09PZc")
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 predictor = ocr_predictor(pretrained=True)
 model = genai.GenerativeModel('models/gemini-1.5-pro-latest')
 
 
-FOLDER_ID = "15_fWWBm68Kokr90AXRwzwCgtGDDuwdH-"
+FOLDER_ID = os.environ["FOLDER_ID"]
 
 # Store processed file IDs to avoid duplicate processing
 processed_files = set()
