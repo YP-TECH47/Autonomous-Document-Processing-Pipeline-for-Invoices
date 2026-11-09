@@ -775,4 +775,4 @@ try:
 
         time.sleep(30)  # Adjust interval as needed
 except KeyboardInterrupt:
-    print(" Monitoring stopped.")
+    print("Monitoring stopped by user.")
